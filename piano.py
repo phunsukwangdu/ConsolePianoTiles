@@ -4,10 +4,11 @@ import time
 
 class Board:
 
-	__slots__ = ('tiles', 'LENGTH', 'WIDTH', 'index', 'score')
+	__slots__ = ('tiles', 'LENGTH', 'SHOW', 'WIDTH', 'index', 'score')
 
 	def __init__(self):
 		self.LENGTH = 20
+		self.SHOW = 4
 		self.WIDTH = 4
 		self.tiles = [[False for i in range(self.WIDTH)] for i in range(self.LENGTH)]
 		self.index = 0
@@ -20,10 +21,17 @@ class Board:
 
 	def printBoard(self):
 		s = "\n"
-		for i in range(self.LENGTH - 1, self.index - 1, -1):
-			for tile in self.tiles[i]:
-				s += "X" if tile else "."
+
+		for i in range(self.index - 1 + self.SHOW, self.index - 1, -1):
+
+			if i >= self.LENGTH:
+				s += "...."
+
+			else:
+				for tile in self.tiles[i]:
+					s += "X" if tile else "."
 			s += "\n"
+
 		print(s)
 
 	def setupBoard(self):
@@ -47,30 +55,55 @@ class Board:
 		elif move == 'k':
 			return 3
 
+	def endGame(self):
+		return self.index == self.LENGTH
+
 # Main program.
 def main():
 	board = Board()
 	get = _Getch()
-	startTime = time.time()
-	won = True
+	first = True
 
-	for i in range (board.LENGTH):
+	while not board.endGame():
 		os.system('cls')
 		board.printBoard()
-		if not board.checkMove(str(get())[-2]):
+
+		c = str(get())[-2]
+
+		if first:
+			startTime = time.time()
+			first = False
+
+		if not board.checkMove(c):
 			print("You lose!")
-			won = False
-			printTimeStats(board, startTime)
-			break
+			printTimeStats(board, startTime, False)
+			return
 
-	if won:
-		print("You win!")
-		printTimeStats(board, startTime)
+	os.system('cls')
+	board.printBoard()
+	print("You win!")
+	printTimeStats(board, startTime, True)
 
-def printTimeStats(board, startTime):
+
+def printTimeStats(board, startTime, won):
 	totalTime = time.time() - startTime
-	print("Lasted " + str(board.index) + " moves, took " + str(totalTime) + " seconds")
-	print("Keys per second: " + str(float(totalTime) / (board.index + 1.0)))
+	print(("Lasted " if not won else "Did ") + str(board.index) + " moves, took " + "{0:.3f}".format(totalTime) + " seconds")
+	print("Keys per second: " + "{0:.3f}".format((float(board.index) / totalTime) if totalTime != 0 else 0))
+	checkHighScore(totalTime, won)
+
+def checkHighScore(time, won):
+	openfile = open("hiscore.txt", "w+")
+	hiscore = 99999999999999999999
+	if openfile is not None:
+		hiscore = float(openfile.readline())
+
+	if time < hiscore and won:
+		print("New hiscore!")
+		openf = open("hiscore.txt", "w")
+		openf.write(str(time))
+		openf.close()
+	else:
+		print("Current hiscore: " + str(hiscore))
 
 class _Getch:
     """
